@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# glauberportfolio
 
-## Getting Started
+Portfólio de Glauber Monteiro: Next.js 16 (App Router), React 19, Tailwind CSS v4. É a implementação do protótipo **Portfolio v5** do Claude Design.
 
-First, run the development server:
+## Rodar
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack de animação
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Efeito | Biblioteca | Onde |
+|---|---|---|
+| Loader 000→100 + cortina, nome letra a letra, reveal com blur no scroll | **anime.js v4** | `lib/motion.ts` |
+| Contadores das estatísticas | **React Bits** (`CountUp`, via registry reactbits.dev) | `components/reactbits/CountUp.tsx` |
+| Notebook 3D que muda a tela e se desmonta a cada capítulo | **Three.js** | `lib/laptop-scene.ts` |
+| Scroll suave | **Lenis** | `components/Portfolio.tsx` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Estrutura
 
-## Learn More
+- `lib/data.ts`: **todo o conteúdo** (textos, trajetória, projetos, skills, links). Comece editando aqui.
+- `components/Portfolio.tsx`: orquestra o estado, o loop de scroll, o Lenis e a cena 3D.
+- `components/sections/*`: uma seção por arquivo.
+- `app/globals.css`: tokens de cor (tema escuro/claro), keyframes e breakpoints (`md` = 768px, `lg` = 1100px).
 
-To learn more about Next.js, take a look at the following resources:
+## Pendências do conteúdo
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Os placeholders entre `[colchetes]` vieram do protótipo: resultados dos projetos, projetos pessoais, número de projetos entregues, prazo de resposta, WhatsApp, LinkedIn e GitHub.
+O formulário de contato **simula** o envio: veja o `TODO` em `submit` (`components/Portfolio.tsx`) para integrar com Resend, Formspree ou uma rota `/api`.
