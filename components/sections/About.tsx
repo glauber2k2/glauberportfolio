@@ -6,7 +6,7 @@ const WORDS = ABOUT.split(" ");
 
 export function About() {
   return (
-    <section id="sobre" data-chapter="1" className="relative pt-[46vh] pb-[6vh] lg:pt-[24vh] lg:pb-[16vh]">
+    <section id="sobre" data-chapter="1" className="relative pt-8 pb-14 desk:pt-[24vh] desk:pb-[16vh]">
       <SplitGrid>
         <Panel side="R">
           <Eyebrow n="01" label="Sobre" />

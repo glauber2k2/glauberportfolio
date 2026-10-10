@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import type Lenis from "lenis";
-import { CALLOUTS, EMAIL, EMPTY_FORM, PROJECTS, type Filter, type FormState, type FormStatus } from "@/lib/data";
+import { CALLOUTS, DESK_MQ, EMAIL, EMPTY_FORM, PROJECTS, type Filter, type FormState, type FormStatus } from "@/lib/data";
 import { initReveal, runHeroIntro, runLoader } from "@/lib/motion";
 import type { SceneInput } from "@/lib/laptop-scene";
 import { Header } from "./sections/Header";
@@ -34,6 +34,16 @@ type Runtime = {
 const c01 = (v: number) => Math.max(0, Math.min(1, v));
 const noop = () => () => {};
 
+/** Media query reativa (SSR assume `ssr`). */
+function useMedia(query: string, ssr: boolean) {
+  const subscribe = useCallback((cb: () => void) => {
+    const m = matchMedia(query);
+    m.addEventListener("change", cb);
+    return () => m.removeEventListener("change", cb);
+  }, [query]);
+  return useSyncExternalStore(subscribe, () => matchMedia(query).matches, () => ssr);
+}
+
 export default function Portfolio() {
   const [theme, setThemeState] = useState<"dark" | "light">("dark");
   const [loaded, setLoaded] = useState(false);
@@ -47,6 +57,10 @@ export default function Portfolio() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [copied, setCopied] = useState(false);
   const year = useSyncExternalStore(noop, () => new Date().getFullYear(), () => 2026);
+  const desk = useMedia(DESK_MQ, true);
+  const fine = useMedia("(hover: hover) and (pointer: fine)", true);
+  const reduced = useMedia("(prefers-reduced-motion: reduce)", false);
+  const [glOk, setGlOk] = useState(true);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
@@ -63,20 +77,31 @@ export default function Portfolio() {
   const uiRef = useRef(ui);
 
   const visible = useMemo(() => PROJECTS.filter((p) => filter === "Todos" || p.cat === filter), [filter]);
-  const activeProj = projHover != null ? projHover : ui.proj;
+  const activeProj = Math.min(visible.length - 1, desk && projHover != null ? projHover : ui.proj);
 
   // Espelho do estado React para a cena 3D (lido a cada frame)
-  const live = useRef<Omit<SceneInput, "c" | "endT" | "mx" | "my" | "hoverTarget" | "reduced" | "fine">>({
-    modal, hl, projHover, proj: ui.proj, visible, tl: ui.tl, step: ui.step, form, status,
+  const live = useRef<Omit<SceneInput, "c" | "endT" | "mx" | "my" | "hoverTarget" | "reduced" | "fine" | "desk">>({
+    modal, hl, projHover, proj: ui.proj, visible, tl: ui.tl, step: ui.step, form, status, loaded, menu,
   });
   useEffect(() => {
-    live.current = { modal, hl, projHover, proj: ui.proj, visible, tl: ui.tl, step: ui.step, form, status };
+    live.current = { modal, hl, projHover, proj: ui.proj, visible, tl: ui.tl, step: ui.step, form, status, loaded, menu };
     uiRef.current = ui;
   });
 
   const openModal = useCallback((id: string) => setModal(id), []);
   const closeModal = useCallback(() => setModal(null), []);
   const closeMenu = useCallback(() => setMenu(false), []);
+  // Projeto ativo no carrossel (mobile/tablet); no desktop vem da posição de scroll
+  const setActiveProj = useCallback((proj: number) => {
+    if (proj === uiRef.current.proj) return;
+    uiRef.current = { ...uiRef.current, proj };
+    setUi(uiRef.current);
+  }, []);
+  const openActive = useCallback(() => {
+    const v = live.current.visible.length ? live.current.visible : PROJECTS;
+    const p = v[Math.min(v.length - 1, uiRef.current.proj)];
+    if (p) setModal(p.id);
+  }, []);
 
   // Trava o scroll quando menu/modal estão abertos
   useEffect(() => {
@@ -108,6 +133,7 @@ export default function Portfolio() {
 
     R.reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     R.fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const deskMq = matchMedia(DESK_MQ);
 
     on(window, "pointermove", (e) => { R.mx = e.clientX; R.my = e.clientY; R.hoverTarget = e.target as Element; }, { passive: true });
     on(document, "keydown", (e) => { if (e.key === "Escape") { closeModal(); closeMenu(); } });
@@ -175,8 +201,9 @@ export default function Portfolio() {
       root.querySelectorAll("[data-tl]").forEach((el, i) => { if (el.getBoundingClientRect().top < vh * 0.5) tl = i; });
       const tf = tlFillRef.current;
       if (tf) { const r = tf.parentElement!.getBoundingClientRect(); tf.style.transform = `scaleY(${c01((vh * 0.5 - r.top) / Math.max(1, r.height)).toFixed(4)})`; }
-      let proj = 0;
-      root.querySelectorAll("[data-proj]").forEach((el, i) => { if (el.getBoundingClientRect().top < vh * 0.5) proj = i; });
+      let proj = uiRef.current.proj;
+      // Desktop: projeto ativo pela posição de scroll; mobile/tablet: pelo carrossel (setActiveProj)
+      if (deskMq.matches) { proj = 0; root.querySelectorAll("[data-proj]").forEach((el, i) => { if (el.getBoundingClientRect().top < vh * 0.5) proj = i; }); }
       let step = -1;
       root.querySelectorAll("[data-step]").forEach((el, i) => { if (el.getBoundingClientRect().top < vh * 0.62) step = i; });
 
@@ -197,14 +224,16 @@ export default function Portfolio() {
           host: sceneRef.current,
           glow: glowRef.current,
           callouts: calloutRef.current,
-          read: () => ({ ...live.current, c: R.c, endT: R.endT, mx: R.mx, my: R.my, hoverTarget: R.hoverTarget, reduced: R.reduced, fine: R.fine }),
+          read: () => ({ ...live.current, c: R.c, endT: R.endT, mx: R.mx, my: R.my, hoverTarget: R.hoverTarget, reduced: R.reduced, fine: R.fine, desk: deskMq.matches }),
           setLapClick: (fn) => { R.lapClick = fn; },
           openModal,
+          openActive,
+          heroSlot: () => root.querySelector<HTMLElement>("[data-hero-slot]"),
         });
         render3d = scene.render;
         offs.push(() => { render3d = null; scene.dispose(); });
       } catch {
-        /* sem WebGL: o site funciona sem a cena */
+        setGlOk(false); // sem WebGL: o site funciona sem a cena (e sem o slot do hero)
       }
     });
 
@@ -222,7 +251,7 @@ export default function Portfolio() {
       offs.reverse().forEach((f) => { try { f(); } catch { /* noop */ } });
       document.body.style.overflow = "";
     };
-  }, [openModal, closeModal, closeMenu]);
+  }, [openModal, openActive, closeModal, closeMenu]);
 
   const setTheme = (t: "dark" | "light") => {
     const h = document.documentElement;
@@ -264,13 +293,14 @@ export default function Portfolio() {
       <div
         ref={glowRef}
         aria-hidden="true"
-        className="pointer-events-none fixed top-0 left-0 z-0 size-[70vmin] rounded-full opacity-50 blur-[30px] will-change-transform"
+        className="pointer-events-none fixed top-0 left-0 z-0 hidden size-[70vmin] rounded-full opacity-50 blur-[30px] will-change-transform desk:block"
         style={{ background: "radial-gradient(circle,var(--glow),transparent 62%)", transform: "translate(60vw,10vh)" }}
       />
-      <div ref={sceneRef} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[1]" />
+      {/* Estilo inline: no mobile/tablet a cena reescreve a posição para virar o dock */}
+      <div ref={sceneRef} aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none" }} />
 
       {/* Rótulos das peças na vista explodida (posicionados pela cena) */}
-      <div ref={calloutRef} aria-hidden="true" className="pointer-events-none invisible fixed inset-0 z-[3] hidden opacity-0 lg:block">
+      <div ref={calloutRef} aria-hidden="true" className="pointer-events-none invisible fixed inset-0 z-[3] hidden opacity-0 desk:block">
         {CALLOUTS.map((k, i) => (
           <div
             key={k.part}
@@ -303,16 +333,18 @@ export default function Portfolio() {
       />
 
       <main className="relative z-[2]">
-        <Hero hintRef={hintRef} introRef={introRef} onAskQuote={askQuote} />
+        <Hero hintRef={hintRef} introRef={introRef} stage={glOk} onAskQuote={askQuote} />
         <About />
         <Timeline active={ui.tl} fillRef={tlFillRef} />
-        <Skills hl={hl} onHighlight={setHl} />
+        <Skills hl={hl} fine={fine} onHighlight={setHl} />
         <Projects
           visible={visible}
           active={activeProj}
           filter={filter}
-          onFilter={(f) => { setFilter(f); setProjHover(null); }}
+          reduced={reduced}
+          onFilter={(f) => { setFilter(f); setProjHover(null); setActiveProj(0); }}
           onHover={setProjHover}
+          onActive={setActiveProj}
           onOpen={openModal}
         />
         <Services step={ui.step} onAskQuote={askQuote} />

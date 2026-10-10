@@ -16,15 +16,14 @@ export function Container({ children, className }: { children: ReactNode; classN
 
 /** Grade 2 colunas no desktop: o conteúdo fica num lado e o notebook 3D no outro. */
 export function SplitGrid({ children }: { children: ReactNode }) {
-  return <Container className="grid grid-cols-1 lg:grid-cols-2">{children}</Container>;
+  return <Container className="grid grid-cols-1 desk:grid-cols-2">{children}</Container>;
 }
 
-/** Painel de vidro no mobile/tablet; transparente no desktop (onde a cena fica ao lado). */
-export const panelClass =
-  "min-w-0 max-w-[600px] rounded-[24px] border border-line bg-panel p-[clamp(22px,5vw,32px)] backdrop-blur-[14px] backdrop-saturate-[1.4] lg:border-transparent lg:bg-transparent lg:p-0 lg:[backdrop-filter:none] lg:[-webkit-backdrop-filter:none]";
+/** Coluna de conteúdo: largura total no mobile/tablet (o notebook fica no dock); 600px ao lado da cena no desktop. */
+export const panelClass = "min-w-0 desk:max-w-[600px]";
 
 export function Panel({ side, children, className }: { side: "L" | "R"; children: ReactNode; className?: string }) {
-  return <div className={cx(panelClass, side === "L" ? "lg:col-start-1" : "lg:col-start-2", className)}>{children}</div>;
+  return <div className={cx(panelClass, side === "L" ? "desk:col-start-1" : "desk:col-start-2", className)}>{children}</div>;
 }
 
 export function Eyebrow({ n, label }: { n: string; label: string }) {

@@ -4,7 +4,7 @@ import { Eyebrow, Icon, Panel, SplitGrid, cx, h2Class, tagClass } from "../ui";
 
 export function Timeline({ active, fillRef }: { active: number; fillRef: Ref<HTMLDivElement> }) {
   return (
-    <section id="trajetoria" data-chapter="2" className="relative pt-[46vh] pb-[6vh] lg:pt-[24vh] lg:pb-[16vh]">
+    <section id="trajetoria" data-chapter="2" className="relative pt-8 pb-14 desk:pt-[24vh] desk:pb-[16vh]">
       <SplitGrid>
         <Panel side="L">
           <Eyebrow n="02" label="Trajetória" />
@@ -20,13 +20,13 @@ export function Timeline({ active, fillRef }: { active: number; fillRef: Ref<HTM
                 key={i}
                 data-tl=""
                 className={cx(
-                  "relative pb-11 pl-11 transition-opacity duration-500 lg:min-h-[34vh]",
-                  i === active ? "lg:opacity-100" : i < active ? "lg:opacity-50" : "lg:opacity-[.32]",
+                  "relative pb-11 pl-11 transition-opacity duration-500 desk:min-h-[34vh]",
+                  i === active ? "desk:opacity-100" : i < active ? "desk:opacity-50" : "desk:opacity-[.32]",
                 )}
               >
                 <span
                   aria-hidden="true"
-                  className="absolute top-[5px] left-0 size-[15px] rounded-full border-[1.5px] border-acc transition-[transform,background-color] duration-[450ms,400ms] ease-out-quint lg:shadow-[0_0_0_6px_var(--bg)]"
+                  className="absolute top-[5px] left-0 size-[15px] rounded-full border-[1.5px] border-acc transition-[transform,background-color] duration-[450ms,400ms] ease-out-quint desk:shadow-[0_0_0_6px_var(--bg)]"
                   style={{ background: i <= active ? "var(--acc)" : "var(--bg)", transform: `scale(${i === active ? 1.15 : 0.8})` }}
                 />
                 <div className="mb-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-2">

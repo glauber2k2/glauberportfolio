@@ -3,7 +3,7 @@ import { Eyebrow, Icon, Panel, SplitGrid, cx, h2Class } from "../ui";
 
 export function Services({ step, onAskQuote }: { step: number; onAskQuote: () => void }) {
   return (
-    <section id="servicos" data-chapter="5" className="relative pt-[46vh] pb-[6vh] lg:pt-[24vh] lg:pb-[16vh]">
+    <section id="servicos" data-chapter="5" className="relative pt-8 pb-14 desk:pt-[24vh] desk:pb-[16vh]">
       <SplitGrid>
         <Panel side="L">
           <Eyebrow n="05" label="Serviços" />
@@ -31,7 +31,7 @@ export function Services({ step, onAskQuote }: { step: number; onAskQuote: () =>
             {STEPS.map((t, i) => {
               const done = i < step, cur = i === step;
               return (
-                <div key={t} data-step="" className="relative flex gap-[18px] pb-7 lg:min-h-[14vh]">
+                <div key={t} data-step="" className="relative flex gap-[18px] pb-7 desk:min-h-[14vh]">
                   {i < 3 && (
                     <span aria-hidden="true" className={cx("absolute top-[38px] bottom-1 left-[17px] w-px transition-[background-color] duration-400", done ? "bg-acc" : "bg-line2")} />
                   )}

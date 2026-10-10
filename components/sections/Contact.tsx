@@ -28,7 +28,7 @@ export function Contact({ form, status, copied, onField, onSubmit, onReset, onCo
   const loading = status === "loading";
   const firstName = form.name.trim().split(" ")[0] || "pelo contato";
   return (
-    <section id="contato" data-chapter="6" className="relative pt-[46vh] pb-[6vh] lg:pt-[24vh] lg:pb-[10vh]">
+    <section id="contato" data-chapter="6" className="relative pt-8 pb-14 desk:pt-[24vh] desk:pb-[10vh]">
       <SplitGrid>
         <Panel side="L">
           <Eyebrow n="06" label="Contato" />

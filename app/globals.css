@@ -1,9 +1,15 @@
 @import "tailwindcss";
 
-/* Breakpoints do protótipo: < 768px = mobile, >= 1100px = desktop com cena 3D lateral */
+/* Breakpoints do protótipo: < 768px = mobile, md = tablet.
+   `desk:` = layout com a cena 3D lateral; depende também da altura (mesma regra de DESK_MQ em lib/data.ts):
+   >= 1100x640, ou paisagem >= 900x700. Abaixo disso o notebook fica no slot do hero e depois vira um dock. */
 @theme {
   --breakpoint-md: 768px;
-  --breakpoint-lg: 1100px;
+}
+@custom-variant desk {
+  @media (min-width: 1100px) and (min-height: 640px), (min-width: 900px) and (min-height: 700px) and (orientation: landscape) {
+    @slot;
+  }
 }
 
 @theme inline {

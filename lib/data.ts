@@ -7,6 +7,9 @@ export const WHATSAPP = `https://wa.me/${PHONE_RAW}?text=${encodeURIComponent("O
 export const LINKEDIN = "https://www.linkedin.com/in/glaubersm";
 export const GITHUB = "https://github.com/glauber2k2";
 
+/** Layout desktop (cena 3D lateral). Espelha a variante `desk:` de app/globals.css. */
+export const DESK_MQ = "(min-width: 1100px) and (min-height: 640px), (min-width: 900px) and (min-height: 700px) and (orientation: landscape)";
+
 export const lucide = (n: string) => `https://unpkg.com/lucide-static@0.400.0/icons/${n}.svg`;
 export const simple = (n: string) => `https://cdn.simpleicons.org/${n}`;
 

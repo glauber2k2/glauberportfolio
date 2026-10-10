@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ABOUT, CALLOUTS, EMAIL, PROJECTS, STEPS, TIMELINE, type FormState, type FormStatus, type Project } from "./data";
+import { ABOUT, CALLOUTS, EMAIL, PROJECTS, STEPS, TIMELINE, lucide, type FormState, type FormStatus, type Project } from "./data";
 
 /** Estado que a cena lê a cada frame (vem do componente React). */
 export type SceneInput = {
@@ -21,6 +21,12 @@ export type SceneInput = {
   step: number;
   form: FormState;
   status: FormStatus;
+  /** Loader terminou (no modo compacto o notebook já abre no hero). */
+  loaded: boolean;
+  /** Menu mobile aberto (esconde o dock). */
+  menu: boolean;
+  /** Layout desktop (DESK_MQ); fora dele a cena vai para o slot do hero / dock. */
+  desk: boolean;
 };
 
 type Hooks = {
@@ -30,6 +36,10 @@ type Hooks = {
   read: () => SceneInput;
   setLapClick: (fn: (() => void) | null) => void;
   openModal: (id: string) => void;
+  /** Abre o estudo de caso do projeto ativo no carrossel (toque no dock). */
+  openActive: () => void;
+  /** Slot do hero onde o notebook aparece antes de encolher para o dock. */
+  heroSlot: () => HTMLElement | null;
 };
 
 type Explode = { x?: number; y?: number; z?: number; rx?: number };
@@ -424,11 +434,77 @@ export function createLaptopScene(h: Hooks) {
   if (document.fonts?.ready) document.fonts.ready.then(() => { lastKey = ""; });
   const t0 = performance.now();
 
+  // ---------- Dock (mobile/tablet) ----------
+  // O host sai do fundo em tela cheia e passa a ser uma "janela" fixa: começa sobre o slot do hero
+  // e, conforme o slot sai da tela, encolhe até o canto inferior direito. Pode ser minimizado.
+  const HOST_CSS = "position:fixed;inset:0;z-index:1;pointer-events:none";
+  const iconHtml = (n: string, px: number) =>
+    `<span aria-hidden="true" style="width:${px}px;height:${px}px;background:currentColor;-webkit-mask:url(${lucide(n)}) center/contain no-repeat;mask:url(${lucide(n)}) center/contain no-repeat"></span>`;
+  let docked = false, dockMin = false, dockBtn: HTMLButtonElement | null = null, btnMin: boolean | null = null, dockChapter = 0;
+  const onHostClick = () => {
+    if (dockMin) { dockMin = false; return; }
+    if (dockChapter === 4) h.openActive();
+  };
+  const layoutDock = (s: SceneInput) => {
+    if (!docked) {
+      docked = true;
+      host.removeAttribute("aria-hidden");
+      host.style.cssText = "position:fixed;z-index:4;pointer-events:auto;cursor:pointer;background:transparent";
+      host.addEventListener("click", onHostClick);
+      const b = document.createElement("button");
+      b.type = "button";
+      b.onclick = (e) => { e.stopPropagation(); dockMin = !dockMin; };
+      host.appendChild(b);
+      dockBtn = b; btnMin = null;
+    }
+    const vw = innerWidth, vh = innerHeight, dw = vw < 768 ? 150 : 220, dh = Math.round(dw * 0.72), g = 14;
+    const slot = h.heroSlot();
+    const r = slot && slot.offsetParent ? slot.getBoundingClientRect() : null;
+    let m = r ? c01((84 - r.top) / (r.height * 0.75)) : 1;
+    m = m * m * (3 - 2 * m);
+    const min = dockMin && m > 0.99, dL = vw - dw - g, dT = vh - dh - g;
+    let L = dL, T = dT, W = dw, H = dh, rad = 16;
+    if (min) { W = H = 48; L = vw - 48 - g; T = vh - 48 - g; rad = 24; }
+    else if (r) { L = r.left + (dL - r.left) * m; T = r.top + (dT - r.top) * m; W = r.width + (dw - r.width) * m; H = r.height + (dh - r.height) * m; rad = 22 - 6 * m; }
+    const st = host.style;
+    st.left = L.toFixed(1) + "px"; st.top = T.toFixed(1) + "px"; st.width = W.toFixed(1) + "px"; st.height = H.toFixed(1) + "px"; st.borderRadius = rad + "px";
+    st.visibility = s.modal || s.menu ? "hidden" : "visible";
+    const b = dockBtn!;
+    if (btnMin !== min) {
+      btnMin = min;
+      b.setAttribute("aria-label", min ? "Mostrar notebook" : "Minimizar notebook");
+      b.style.cssText = min
+        ? "position:absolute;inset:0;z-index:3;border:0;border-radius:999px;background:transparent;color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"
+        : "position:absolute;right:6px;top:6px;z-index:3;width:28px;height:28px;border:1px solid var(--line2);border-radius:999px;background:var(--nav);color:var(--fg2);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0";
+      b.innerHTML = min ? iconHtml("laptop", 20) : iconHtml("minus", 12);
+    }
+    b.style.visibility = min || m > 0.6 ? "visible" : "hidden";
+    renderer.domElement.style.visibility = min ? "hidden" : "visible";
+    return !min;
+  };
+  const resetDock = () => {
+    docked = false;
+    host.removeEventListener("click", onHostClick);
+    dockBtn?.remove(); dockBtn = null;
+    host.style.cssText = HOST_CSS;
+    host.setAttribute("aria-hidden", "true");
+    renderer.domElement.style.visibility = "visible";
+  };
+
+  let lastCompact: boolean | null = null;
   const render = (now: number) => {
     if (disposed) return;
     const s = h.read();
     const t = (now - t0) / 1000;
     f++;
+    const compact = !s.desk;
+    if (compact !== lastCompact) {
+      lastCompact = compact;
+      renderer.setPixelRatio(Math.min(compact ? 1.5 : 2, devicePixelRatio || 1));
+      lw = -1;
+    }
+    if (compact) { if (!layoutDock(s)) return; }
+    else if (docked) resetDock();
     if (host.clientWidth !== lw || host.clientHeight !== lh) {
       lw = host.clientWidth; lh = host.clientHeight;
       if (lw && lh) { renderer.setSize(lw, lh, false); cam.aspect = lw / lh; cam.updateProjectionMatrix(); }
@@ -447,19 +523,20 @@ export function createLaptopScene(h: Hooks) {
       lastKey = "";
     }
 
-    const tgt = sample(s.c), k = s.reduced ? 1 : 0.085;
+    // No modo compacto o notebook já aparece aberto no hero (após o loader)
+    const cc = compact && s.c < 1 ? Math.max(s.c, s.loaded ? 0.62 : 0) : s.c;
+    const tgt = sample(cc), k = s.reduced ? 1 : 0.085;
     FIELDS.forEach((n) => { cur[n] += (tgt[n] - cur[n]) * k; });
     const endT = s.endT, eS = ease(endT), lidV = cur.lid, onV = cur.on * (1 - eS);
     const fade = 1 - ramp(endT, 0.45, 1);
     host.style.opacity = fade.toFixed(3);
     if (h.glow) h.glow.style.opacity = (0.5 * fade).toFixed(3);
 
-    const small = innerWidth < 1100, isSm = innerWidth < 768;
     const halfW = Math.tan((17 * Math.PI) / 180) * DIST * cam.aspect;
     const px = s.mx != null ? s.mx / innerWidth - 0.5 : 0, py = s.my != null ? s.my / innerHeight - 0.5 : 0;
-    const X = small ? 0 : cur.x * Math.min(halfW * 0.46, 3.4);
-    const Y = small ? 1.7 - 0.35 * (1 - Math.abs(cur.x)) : cur.y;
-    const Sc = small ? cur.s * (isSm ? 0.5 : 0.64) : cur.s;
+    const X = compact ? 0 : cur.x * Math.min(halfW * 0.46, 3.4);
+    const Y = compact ? cur.y * 0.6 - 0.45 : cur.y;
+    const Sc = compact ? cur.s * Math.min(0.95, halfW / 4.2) : cur.s;
     root.position.set(X, Y, 0);
     root.scale.setScalar(Sc);
     root.rotation.set(cur.rx + py * 0.1, cur.ry + px * 0.18 + (s.reduced ? 0 : Math.sin(t * 0.35) * 0.03), 0);
@@ -483,7 +560,7 @@ export function createLaptopScene(h: Hooks) {
 
     // Hover nas peças (raycast), ignorado quando o ponteiro está sobre conteúdo
     let hov: Part | null = null;
-    if (s.fine && s.mx != null && s.my != null && !s.modal) {
+    if (!compact && s.fine && s.mx != null && s.my != null && !s.modal) {
       const tg = s.hoverTarget;
       const blocked = tg?.closest?.("a,button,input,textarea,label,[data-callout],[data-skill],header,form,p,h1,h2,h3");
       if (!blocked) {
@@ -493,8 +570,14 @@ export function createLaptopScene(h: Hooks) {
         hov = hit ? (hit.object.userData.part as Part) : null;
       }
     }
-    const ch = Math.min(6, Math.floor(s.c));
-    const hlName = s.hl || hov?.name || null;
+    const ch = Math.min(6, Math.floor(cc));
+    dockChapter = ch;
+    let hlName = s.hl || hov?.name || null;
+    // Sem hover no mobile: em Skills as peças acendem uma a uma conforme o scroll
+    if (compact && ch === 3 && !hlName) {
+      const q = ramp(cc - 3, 0.15, 0.9);
+      if (q > 0) hlName = CALLOUTS[Math.min(CALLOUTS.length - 1, Math.floor(q * CALLOUTS.length))].part;
+    }
     all.forEach((p) => {
       const want = p.name === hlName;
       if (p.lit !== want) {
@@ -506,7 +589,7 @@ export function createLaptopScene(h: Hooks) {
     const clickable = !!hov && hov.name === "Tela" && ch === 4;
     document.body.style.cursor = clickable ? "pointer" : "";
     const vis = s.visible.length ? s.visible : PROJECTS;
-    const ap = Math.min(vis.length - 1, s.projHover != null ? s.projHover : s.proj);
+    const ap = Math.min(vis.length - 1, !compact && s.projHover != null ? s.projHover : s.proj);
     const proj = vis[Math.max(0, ap)] || PROJECTS[0];
     h.setLapClick(clickable ? () => h.openModal(proj.id) : null);
 
@@ -514,7 +597,7 @@ export function createLaptopScene(h: Hooks) {
     let mode: string, key: string;
     const d: DrawData = {};
     if (ch === 0) { mode = "hero"; key = "h" + blink; }
-    else if (ch === 1) { d.p = Math.max(0.01, ramp(s.c - 1, 0.02, 0.7)); mode = "about"; key = "a" + Math.floor(d.p * termTotal) + blink; }
+    else if (ch === 1) { d.p = Math.max(0.01, ramp(cc - 1, 0.02, 0.7)); mode = "about"; key = "a" + Math.floor(d.p * termTotal) + blink; }
     else if (ch === 2) { d.i = s.tl; mode = "tl"; key = "t" + d.i; }
     else if (ch === 3) { d.hl = hlName; mode = "skills"; key = "s" + d.hl; }
     else if (ch === 4) { d.proj = proj; d.kind = ["transcricao", "plantoes", "trinity", "clube"].indexOf(proj.id); mode = "proj"; key = "p" + proj.id; }
@@ -530,7 +613,7 @@ export function createLaptopScene(h: Hooks) {
     const cx = ((tmp.x + 1) / 2) * W, cy = ((1 - tmp.y) / 2) * H;
     if (h.glow) { const gs = h.glow.offsetWidth; h.glow.style.transform = `translate(${(cx - gs / 2).toFixed(1)}px,${(cy - gs / 2).toFixed(1)}px)`; }
     const cr = h.callouts;
-    if (cr && !small) {
+    if (cr && !compact) {
       const op = ramp(cur.ex, 0.55, 0.95) * (1 - endT);
       cr.style.opacity = op.toFixed(3);
       cr.style.visibility = op < 0.04 ? "hidden" : "visible";
@@ -560,6 +643,7 @@ export function createLaptopScene(h: Hooks) {
 
   const dispose = () => {
     disposed = true;
+    if (docked) resetDock();
     document.body.style.cursor = "";
     tex.dispose();
     renderer.dispose();

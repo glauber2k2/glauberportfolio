@@ -33,7 +33,7 @@ export function Header({ chapter, scrolled, menuOpen, theme, onToggleTheme, onTo
           <nav
             aria-label="Capítulos"
             className={cx(
-              "hidden items-center gap-0.5 rounded-full border p-[3px] transition-[border-color,background-color] duration-400 lg:flex",
+              "hidden items-center gap-0.5 rounded-full border p-[3px] transition-[border-color,background-color] duration-400 desk:flex",
               compact ? "border-transparent bg-transparent" : "border-line bg-nav",
             )}
           >
@@ -76,7 +76,7 @@ export function Header({ chapter, scrolled, menuOpen, theme, onToggleTheme, onTo
               onClick={onToggleMenu}
               aria-label="Menu"
               aria-expanded={menuOpen}
-              className="flex size-10 cursor-pointer items-center justify-center rounded-full border border-line bg-transparent text-fg lg:hidden"
+              className="flex size-10 cursor-pointer items-center justify-center rounded-full border border-line bg-transparent text-fg desk:hidden"
             >
               <Icon src={lucide(menuOpen ? "x" : "menu")} className="size-[18px]" />
             </button>
