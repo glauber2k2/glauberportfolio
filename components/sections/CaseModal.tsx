@@ -28,7 +28,7 @@ export function CaseModal({ project: m, onClose }: { project: Project; onClose: 
             <Icon src={lucide("x")} className="size-4" />
           </button>
         </div>
-        <div data-lenis-prevent="" className="grid min-h-0 flex-auto grid-cols-1 gap-[clamp(20px,3vw,40px)] overflow-y-auto p-[clamp(20px,2.6vw,32px)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div data-lenis-prevent="" className="grid min-h-0 flex-auto grid-cols-1 gap-[clamp(20px,3vw,40px)] overflow-y-auto p-[clamp(20px,2.6vw,32px)] desk:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-3.5">
             <div className="flex flex-col gap-1.5">
               <div className="text-[14px] text-fg2">{m.org || "Projeto pessoal"}</div>

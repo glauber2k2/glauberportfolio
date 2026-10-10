@@ -7,11 +7,13 @@ const NAME = ["Glauber", "Monteiro"].map((wd, li) => [...wd].map((ch, k) => ({ c
 /** Estado inicial dos blocos do hero; o anime.js anima a entrada após o loader. */
 const pre = { opacity: 0, transform: "translateY(14px)" };
 
-export function Hero({ hintRef, introRef, onAskQuote }: { hintRef: Ref<HTMLDivElement>; introRef: Ref<HTMLDivElement>; onAskQuote: () => void }) {
+export function Hero({ hintRef, introRef, stage, onAskQuote }: { hintRef: Ref<HTMLDivElement>; introRef: Ref<HTMLDivElement>; stage: boolean; onAskQuote: () => void }) {
   return (
-    <section id="top" data-chapter="0" className="relative h-auto lg:h-[190vh]">
-      <div className="relative top-0 flex h-auto min-h-screen items-end pt-[44vh] pb-6 lg:sticky lg:h-screen lg:items-center lg:p-0">
+    <section id="top" data-chapter="0" className="relative h-auto desk:h-[190vh]">
+      <div className="relative top-0 flex h-auto items-start pt-[84px] pb-10 desk:sticky desk:h-screen desk:min-h-screen desk:items-center desk:p-0">
         <SplitGrid>
+          {/* Mobile/tablet: o notebook 3D é posicionado sobre este slot e encolhe para o dock ao rolar */}
+          {stage && <div data-hero-slot="" aria-hidden="true" className="col-span-full mb-7 h-[clamp(260px,42vh,400px)] md:h-[clamp(360px,44vh,520px)] desk:hidden" />}
           <Panel side="L" className="flex flex-col items-start">
             <div ref={introRef} className="contents">
               <div data-intro="100" style={pre} className="mb-7 inline-flex h-[34px] items-center gap-2.5 rounded-full border border-line2 bg-nav pr-3.5 pl-3 text-[13px] text-fg2">
@@ -22,7 +24,7 @@ export function Hero({ hintRef, introRef, onAskQuote }: { hintRef: Ref<HTMLDivEl
                 <span>Disponível para novos projetos</span>
               </div>
 
-              <h1 aria-label="Glauber Monteiro" className="mt-0 mb-5 text-[clamp(48px,14vw,72px)] leading-[.94] font-semibold tracking-[-.055em] md:text-[84px] lg:text-[clamp(64px,6.6vw,104px)]">
+              <h1 aria-label="Glauber Monteiro" className="mt-0 mb-5 text-[clamp(48px,14vw,72px)] leading-[.94] font-semibold tracking-[-.055em] md:text-[84px] desk:text-[clamp(64px,6.6vw,104px)]">
                 {NAME.map((letters, li) => (
                   <span key={li} aria-hidden="true" className="flex overflow-hidden pb-[.07em]">
                     {letters.map((l, k) => (
@@ -75,7 +77,7 @@ export function Hero({ hintRef, introRef, onAskQuote }: { hintRef: Ref<HTMLDivEl
           </Panel>
         </SplitGrid>
 
-        <div ref={hintRef} aria-hidden="true" className="absolute bottom-7 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2.5 font-mono text-[11px] tracking-[.1em] text-fg3 uppercase lg:flex">
+        <div ref={hintRef} aria-hidden="true" className="absolute bottom-7 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2.5 font-mono text-[11px] tracking-[.1em] text-fg3 uppercase desk:flex">
           <span>Role para abrir</span>
           <span className="relative h-10 w-px overflow-hidden bg-line2">
             <span className="absolute inset-0 bg-acc [animation:cue_1.8s_cubic-bezier(.65,0,.35,1)_infinite]" />
