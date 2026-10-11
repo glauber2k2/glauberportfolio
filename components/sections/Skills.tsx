@@ -9,12 +9,12 @@ export function Skills({ hl, fine, onHighlight }: { hl: string | null; fine: boo
           <div className={cx(panelClass, "max-w-[600px] desk:max-w-[400px]")}>
             <Eyebrow n="03" label="Skills" />
             <h2 data-reveal="" data-delay="60" className="mt-0 mb-4 text-[clamp(36px,4.2vw,56px)] leading-[1.02] font-semibold tracking-[-.045em] text-balance">
-              O que tem por dentro
+              Minhas Skills
             </h2>
             <p data-reveal="" data-delay="120" className="m-0 text-[16px] leading-[1.6] text-pretty text-fg2">
               {fine
-                ? "Cada peça do notebook corresponde a uma ferramenta que uso. Passe o mouse sobre as peças ou sobre os nomes abaixo."
-                : "Cada peça do notebook corresponde a uma ferramenta que uso. Toque nos nomes abaixo para destacar a peça."}
+                ? "Conheça as principais tecnologias e ferramentas que utilizo no meu dia a dia. Passe o mouse sobre os nomes abaixo para interagir."
+                : "Conheça as principais tecnologias e ferramentas que utilizo no meu dia a dia. Toque nos nomes abaixo para interagir."}
             </p>
           </div>
         </Container>
